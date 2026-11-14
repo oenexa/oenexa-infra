@@ -8,6 +8,20 @@ module "dns_records" {
   primary_origin_ip = "62.210.92.60"
 }
 
+# Production VPC Network Segmentation
+module "production_vpc" {
+  source   = "../../modules/vpc"
+  vpc_name = "oenexa-vpc-prod"
+}
+
+# Production Kubernetes Cluster
+module "production_k8s" {
+  source     = "../../modules/kubernetes"
+  cluster_name = "oenexa-core-prod-k8s"
+  vpc_id     = module.production_vpc.vpc_id
+  subnet_ids = module.production_vpc.private_microservice_subnet_ids
+}
+
 # Domain 1: Identity DB (Isolated)
 module "identity_db" {
   source      = "../../modules/database-postgres"
