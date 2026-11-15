@@ -1,0 +1,41 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oenexa-infra
+  labels:
+    app.kubernetes.io/name: oenexa-infra
+    app.kubernetes.io/part-of: oenexa
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: oenexa-infra
+  template:
+    metadata:
+      labels:
+        app: oenexa-infra
+    spec:
+      containers:
+        - name: oenexa-infra
+          image: oenexa/
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /api/health/ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health/live
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
