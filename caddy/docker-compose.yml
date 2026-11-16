@@ -1,0 +1,30 @@
+# ==============================================================================
+# OENEXA Unified Gateway & Reverse Proxy (Standalone Service)
+# Repository: oenexa-infra
+# ==============================================================================
+
+version: "3.8"
+
+networks:
+  oenexa-network:
+    name: oenexa-network
+    external: true
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: oenexa-edge-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - oenexa-network
+
+volumes:
+  caddy_data:
+  caddy_config:

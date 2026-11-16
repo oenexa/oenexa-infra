@@ -1,0 +1,114 @@
+# ==============================================================================
+# OENEXA Unified Ecosystem — Master Edge Reverse Proxy (Caddy 2.8)
+# Supports Single-Domain Path-Based Routing & Subdomain 301 Redirects
+# ==============================================================================
+
+# Global configuration: telemetry off, graceful reload
+{
+    admin off
+    auto_https off
+}
+
+# ------------------------------------------------------------------------------
+# 1. Primary Public Ingress (HTTP / Production & Local Development)
+# ------------------------------------------------------------------------------
+:80, oenexa.com, www.oenexa.com, localhost, 127.0.0.1, 62.210.92.60 {
+    encode gzip zstd
+
+    # Hardened Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Security: Block sensitive internal probes from public ingress
+    handle /actuator/* {
+        respond 403
+    }
+    handle /metrics* {
+        respond 403
+    }
+
+    # 1. Layer-1 Blockchain Node JSON-RPC (strip /rpc prefix)
+    handle_path /rpc* {
+        reverse_proxy oenexa-node:8545 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # 2. Central AI Core Backend API Gateway (Spring Boot 4 / Java 25)
+    handle /api/* {
+        reverse_proxy oenexa-ai-core:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # 3. AI Operating System Studio Cockpit (React 18 / Vite on /ai)
+    handle_path /ai* {
+        reverse_proxy oenexa-ai-web:80 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # 4. Layer-1 Blockchain Explorer (React 18 / Vite on /explorer)
+    handle_path /explorer* {
+        reverse_proxy oenexa-explorer:80 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # 5. D-Commerce Escrow Relayer API (Go Gin on /oengo-api)
+    handle_path /oengo-api* {
+        reverse_proxy oengo-api:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # 6. D-Commerce Storefront (Next.js on /food)
+    handle_path /food* {
+        reverse_proxy oengo-web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # 7. Default Root: Main Exchange, Trading Portal & Markets (oenexa-ui)
+    handle {
+        reverse_proxy oenexa-ui:80 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+}
+
+# ------------------------------------------------------------------------------
+# 2. Canonical Vanity Subdomain 301 Permanent Redirects
+# ------------------------------------------------------------------------------
+ai.oenexa.com {
+    redir https://oenexa.com/ai{uri} permanent
+}
+
+explorer.oenexa.com {
+    redir https://oenexa.com/explorer{uri} permanent
+}
+
+rpc.oenexa.com, node.oenexa.com, chain.oenexa.com {
+    redir https://oenexa.com/rpc{uri} permanent
+}
+
+app.oenexa.com, exchange.oenexa.com, trade.oenexa.com, wallet.oenexa.com {
+    redir https://oenexa.com{uri} permanent
+}
+
+coin.oenexa.com {
+    redir https://oenexa.com/coins{uri} permanent
+}
