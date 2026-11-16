@@ -1,0 +1,29 @@
+# ==============================================================================
+# OENEXA Infrastructure & Edge Gateway — Standalone Stack
+# ==============================================================================
+
+version: "3.8"
+
+networks:
+  oenexa-network:
+    name: oenexa-network
+    driver: bridge
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: oenexa-edge-caddy-infra
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_infra_data:/data
+      - caddy_infra_config:/config
+    networks:
+      - oenexa-network
+
+volumes:
+  caddy_infra_data:
+  caddy_infra_config:
